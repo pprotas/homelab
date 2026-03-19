@@ -4,25 +4,16 @@ A single Docker Compose stack running on a Raspberry Pi, serving as a personal p
 
 ## Architecture
 
-```
-                  +------------------------+
-                  |     Cloudflare DNS     |
-                  | *.home.pawelprotas.com |
-                  |      -> Pi LAN IP      |
-                  +-----------+------------+
-                              |
-                  +-----------v------------+
-                  |         Caddy          |
-                  |   reverse proxy + TLS  |
-                  +--+--------+--------+---+
-                     |        |        |
-              +------v-+  +--v-----+  +v----------+
-              |Forgejo |  |Homepage|  |  Grafana   |
-              |AdGuard |  |  Kuma  |  | Speedtest  |
-              | UniFi  |  |OpenCode|  |  Glances   |
-              +--------+  +--------+  +-----------+
+```mermaid
+graph TD
+    CF["Cloudflare DNS<br>*.home.pawelprotas.com → Pi LAN IP"] --> Caddy["Caddy<br>reverse proxy + TLS"]
+    Caddy --> G1["Forgejo<br>AdGuard<br>UniFi"]
+    Caddy --> G2["Homepage<br>Uptime Kuma<br>OpenCode"]
+    Caddy --> G3["Grafana<br>Speedtest<br>Glances"]
 
-   Clients -> AdGuard Home (53) -> Unbound (5335) -> Root DNS
+    DNS["Clients → AdGuard Home :53 → Unbound :5335 → Root DNS"]
+
+    style DNS fill:none,stroke:none
 ```
 
 ## What This Covers

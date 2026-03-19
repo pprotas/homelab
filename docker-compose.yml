@@ -162,8 +162,8 @@ services:
         environment:
             - TZ=Europe/Amsterdam
             - DOCKER_INFLUXDB_INIT_MODE=setup
-            - DOCKER_INFLUXDB_INIT_USERNAME=admin
-            - DOCKER_INFLUXDB_INIT_PASSWORD=REDACTED_PASSWORD
+            - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_INIT_USERNAME}
+            - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_INIT_PASSWORD}
             - DOCKER_INFLUXDB_INIT_ORG=homelab
             - DOCKER_INFLUXDB_INIT_BUCKET=glances
             - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN}
@@ -177,14 +177,21 @@ services:
         restart: unless-stopped
         logging: *default-logging
         mem_limit: 256m
+        entrypoint:
+            - /bin/sh
+            - -c
+            - |
+                envsubst < /etc/glances/glances.conf.template > /etc/glances/glances.conf
+                exec python3 -m glances $${GLANCES_OPT}
         networks:
             - proxy
         pid: host
         environment:
             - TZ=Europe/Amsterdam
             - GLANCES_OPT=--quiet --export influxdb2 -t 15
+            - INFLUXDB_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN}
         volumes:
-            - ./glances/glances.conf:/etc/glances/glances.conf:ro
+            - ./glances/glances.conf:/etc/glances/glances.conf.template:ro
             - /var/run/docker.sock:/var/run/docker.sock:ro
         depends_on:
             - influxdb

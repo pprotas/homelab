@@ -1,0 +1,594 @@
+x-logging: &default-logging
+    driver: json-file
+    options:
+        max-size: "10m"
+        max-file: "3"
+
+services:
+    caddy:
+        image: caddybuilds/caddy-cloudflare:2.11.2
+        container_name: caddy
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 256m
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "wget",
+                    "--spider",
+                    "-q",
+                    "http://localhost:2019/config/",
+                ]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+        ports:
+            - "80:80"
+            - "443:443"
+        networks:
+            - proxy
+        environment:
+            - TZ=Europe/Amsterdam
+            - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+        volumes:
+            - ./Caddyfile:/etc/caddy/Caddyfile
+            - caddy_data:/data
+            - caddy_config:/config
+        labels:
+            kuma.services-group.group.name: Services
+            kuma.caddy.http.name: Caddy
+            kuma.caddy.http.url: http://caddy:2019/config/
+            kuma.caddy.http.parent_name: services-group
+            kuma.caddy.http.notification_name_list: '["ntfy-alerts"]'
+
+    unbound:
+        image: mvance/unbound-rpi:1.22.0
+        container_name: unbound
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 256m
+        environment:
+            - TZ=Europe/Amsterdam
+        healthcheck:
+            test: ["CMD", "drill", "@127.0.0.1", "-p", "5335", "cloudflare.com"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+        networks:
+            dns:
+                ipv4_address: 172.20.1.200
+        volumes:
+            - ./unbound:/opt/unbound/etc/unbound/
+
+    adguardhome:
+        image: adguard/adguardhome:v0.107.72
+        container_name: adguardhome
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 256m
+        healthcheck:
+            test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+        environment:
+            - TZ=Europe/Amsterdam
+        networks:
+            - proxy
+            - dns
+        ports:
+            - "53:53/tcp"
+            - "53:53/udp"
+        volumes:
+            - ./adguardhome/work:/opt/adguardhome/work
+            - ./adguardhome/conf:/opt/adguardhome/conf
+        depends_on:
+            unbound:
+                condition: service_healthy
+        labels:
+            kuma.adguard-home.http.name: AdGuard Home
+            kuma.adguard-home.http.url: https://adguard.home.pawelprotas.com
+            kuma.adguard-home.http.parent_name: services-group
+            kuma.adguard-home.http.notification_name_list: '["ntfy-alerts"]'
+
+    uptime-kuma:
+        image: louislam/uptime-kuma:2.2.0
+        container_name: uptime-kuma
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 256m
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "node",
+                    "-e",
+                    "require('http').get('http://localhost:3001/api/status-page/heartbeat/services',r=>{process.exit(r.statusCode===200?0:1)})",
+                ]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+        environment:
+            - TZ=Europe/Amsterdam
+        networks:
+            - proxy
+            - kuma
+        volumes:
+            - uptime_kuma_data:/app/data
+        labels:
+            kuma.uptime-kuma.http.name: Uptime Kuma
+            kuma.uptime-kuma.http.url: https://uptime.home.pawelprotas.com
+            kuma.uptime-kuma.http.parent_name: services-group
+            kuma.uptime-kuma.http.notification_name_list: '["ntfy-alerts"]'
+
+    speedtest-tracker:
+        image: lscr.io/linuxserver/speedtest-tracker:1.13.10
+        container_name: speedtest-tracker
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 256m
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:80"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+        networks:
+            - proxy
+        environment:
+            - TZ=Europe/Amsterdam
+            - PUID=1000
+            - PGID=1000
+            - APP_KEY=${SPEEDTEST_APP_KEY}
+            - DB_CONNECTION=sqlite
+            - SPEEDTEST_SCHEDULE="6 * * * *"
+            - SPEEDTEST_SERVERS=73997,73317,63958,14080,38957,3200,72520,73564,21726,59893
+        volumes:
+            - speedtest_data:/config
+        labels:
+            kuma.speedtest-tracker.http.name: Speedtest Tracker
+            kuma.speedtest-tracker.http.url: https://speedtest.home.pawelprotas.com
+            kuma.speedtest-tracker.http.parent_name: services-group
+            kuma.speedtest-tracker.http.notification_name_list: '["ntfy-alerts"]'
+
+    influxdb:
+        image: influxdb:2.7.11
+        container_name: influxdb
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 512m
+        networks:
+            - proxy
+        environment:
+            - TZ=Europe/Amsterdam
+            - DOCKER_INFLUXDB_INIT_MODE=setup
+            - DOCKER_INFLUXDB_INIT_USERNAME=admin
+            - DOCKER_INFLUXDB_INIT_PASSWORD=REDACTED_PASSWORD
+            - DOCKER_INFLUXDB_INIT_ORG=homelab
+            - DOCKER_INFLUXDB_INIT_BUCKET=glances
+            - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN}
+        volumes:
+            - influxdb_data:/var/lib/influxdb2
+
+    glances:
+        image: nicolargo/glances:4.5.0.5-full
+        container_name: glances
+        hostname: pi
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 256m
+        networks:
+            - proxy
+        pid: host
+        environment:
+            - TZ=Europe/Amsterdam
+            - GLANCES_OPT=--quiet --export influxdb2 -t 15
+        volumes:
+            - ./glances/glances.conf:/etc/glances/glances.conf:ro
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+        depends_on:
+            - influxdb
+
+    homepage:
+        image: ghcr.io/gethomepage/homepage:v1.10.1
+        container_name: homepage
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 256m
+        healthcheck:
+            test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+        networks:
+            - proxy
+        environment:
+            - TZ=Europe/Amsterdam
+            - HOMEPAGE_ALLOWED_HOSTS=home.pawelprotas.com
+            - HOMEPAGE_VAR_ADGUARD_USERNAME=${ADGUARD_USERNAME}
+            - HOMEPAGE_VAR_ADGUARD_PASSWORD=${ADGUARD_PASSWORD}
+            - HOMEPAGE_VAR_SPEEDTEST_API_KEY=${SPEEDTEST_API_KEY}
+            - HOMEPAGE_VAR_GRAFANA_USERNAME=${GRAFANA_ADMIN_USER}
+            - HOMEPAGE_VAR_GRAFANA_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+        volumes:
+            - ./homepage:/app/config
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+        labels:
+            kuma.homepage.http.name: Homepage
+            kuma.homepage.http.url: https://home.pawelprotas.com
+            kuma.homepage.http.parent_name: services-group
+            kuma.homepage.http.notification_name_list: '["ntfy-alerts"]'
+
+    unifi-db:
+        image: docker.io/mongo:4.4.18
+        container_name: unifi-db
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 1g
+        healthcheck:
+            test:
+                ["CMD", "mongo", "--quiet", "--eval", "db.adminCommand('ping')"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+        command: mongod --auth
+        networks:
+            - unifi
+        environment:
+            - TZ=Europe/Amsterdam
+            - MONGO_USER=${MONGO_USER}
+            - MONGO_PASS=${MONGO_PASS}
+            - MONGO_DBNAME=unifi
+        volumes:
+            - unifi_db_data:/data/db
+            - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
+
+    unifi-network-application:
+        image: lscr.io/linuxserver/unifi-network-application:10.1.89
+        container_name: unifi-network-application
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 1g
+        healthcheck:
+            test: ["CMD", "curl", "-kf", "https://localhost:8443"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 60s
+        networks:
+            - proxy
+            - unifi
+        environment:
+            - PUID=1000
+            - PGID=1000
+            - TZ=Europe/Amsterdam
+            - MONGO_USER=${MONGO_USER}
+            - MONGO_PASS=${MONGO_PASS}
+            - MONGO_HOST=unifi-db
+            - MONGO_PORT=27017
+            - MONGO_DBNAME=unifi
+            - MONGO_AUTHSOURCE=unifi
+        ports:
+            - "8443:8443" # Web admin UI
+            - "3478:3478/udp" # STUN
+            - "10001:10001/udp" # AP discovery
+            - "8080:8080" # Device communication (do not change)
+        volumes:
+            - unifi_data:/config
+        depends_on:
+            unifi-db:
+                condition: service_healthy
+        labels:
+            kuma.unifi.http.name: UniFi Network Application
+            kuma.unifi.http.url: https://unifi.home.pawelprotas.com
+            kuma.unifi.http.parent_name: services-group
+            kuma.unifi.http.notification_name_list: '["ntfy-alerts"]'
+
+    autokuma:
+        image: ghcr.io/bigboot/autokuma:2.0.0
+        container_name: autokuma
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 128m
+        networks:
+            - kuma
+        environment:
+            TZ: Europe/Amsterdam
+            AUTOKUMA__KUMA__URL: http://uptime-kuma:3001
+            AUTOKUMA__KUMA__USERNAME: ${AUTOKUMA_USERNAME}
+            AUTOKUMA__KUMA__PASSWORD: ${AUTOKUMA_PASSWORD}
+            AUTOKUMA__TAG_NAME: AutoKuma
+            AUTOKUMA__TAG_COLOR: "#42C0FB"
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - autokuma_data:/data
+        labels:
+            kuma.ntfy-alerts.notification.name: Ntfy Alerts
+            kuma.ntfy-alerts.notification.active: "true"
+            kuma.ntfy-alerts.notification.is_default: "true"
+            kuma.ntfy-alerts.notification.config: >-
+                {"type":"ntfy","ntfyserverurl":"https://ntfy.home.pawelprotas.com","ntfytopic":"alerts","ntfyPriority":4,"ntfyAuthenticationMethod":"accessToken","ntfyaccesstoken":"${NTFY_TOKEN}"}
+        depends_on:
+            uptime-kuma:
+                condition: service_healthy
+
+    tailscale:
+        image: tailscale/tailscale:v1.94.2
+        container_name: tailscale
+        hostname: pi
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 128m
+        cap_add:
+            - NET_ADMIN
+            - SYS_MODULE
+        environment:
+            - TZ=Europe/Amsterdam
+            - TS_AUTHKEY=${TS_AUTHKEY}
+            - TS_EXTRA_ARGS=--advertise-routes=192.168.50.0/24 --accept-dns=false
+            - TS_STATE_DIR=/var/lib/tailscale
+        volumes:
+            - tailscale_data:/var/lib/tailscale
+            - /dev/net/tun:/dev/net/tun
+        networks:
+            - proxy
+        labels:
+            kuma.tailscale.docker.name: Tailscale
+            kuma.tailscale.docker.docker_host: 1
+            kuma.tailscale.docker.docker_container: tailscale
+            kuma.tailscale.docker.parent_name: services-group
+            kuma.tailscale.docker.notification_name_list: '["ntfy-alerts"]'
+
+    diun:
+        image: crazymax/diun:4.31.0
+        container_name: diun
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 128m
+        healthcheck:
+            test: ["CMD", "diun", "healthcheck"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+        networks:
+            - proxy
+        environment:
+            - TZ=Europe/Amsterdam
+            - DIUN_WATCH_WORKERS=10
+            - DIUN_WATCH_SCHEDULE=0 */6 * * *
+            - DIUN_WATCH_JITTER=30s
+            - DIUN_PROVIDERS_DOCKER=true
+            - DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT=true
+            - DIUN_NOTIF_NTFY_ENDPOINT=http://ntfy:80
+            - DIUN_NOTIF_NTFY_TOPIC=alerts
+            - DIUN_NOTIF_NTFY_PRIORITY=3
+            - DIUN_NOTIF_NTFY_TOKEN=${NTFY_TOKEN}
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - diun_data:/data
+        depends_on:
+            ntfy:
+                condition: service_healthy
+        labels:
+            kuma.diun.docker.name: Diun
+            kuma.diun.docker.docker_host: 1
+            kuma.diun.docker.docker_container: diun
+            kuma.diun.docker.parent_name: services-group
+            kuma.diun.docker.notification_name_list: '["ntfy-alerts"]'
+
+    grafana:
+        image: grafana/grafana:11.6.0
+        container_name: grafana
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 256m
+        networks:
+            - proxy
+        environment:
+            - TZ=Europe/Amsterdam
+            - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+            - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+            - GF_SERVER_ROOT_URL=https://grafana.home.pawelprotas.com
+            - NTFY_TOKEN=${NTFY_TOKEN}
+            - INFLUXDB_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN}
+        volumes:
+            - grafana_data:/var/lib/grafana
+            - ./grafana/provisioning:/etc/grafana/provisioning:ro
+        depends_on:
+            - influxdb
+        labels:
+            kuma.grafana.http.name: Grafana
+            kuma.grafana.http.url: https://grafana.home.pawelprotas.com
+            kuma.grafana.http.parent_name: services-group
+            kuma.grafana.http.notification_name_list: '["ntfy-alerts"]'
+
+    opencode:
+        image: ghcr.io/anomalyco/opencode:1.2.27
+        container_name: opencode
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 512m
+        entrypoint:
+            - /bin/sh
+            - -c
+            - |
+                apk add --no-cache docker-cli docker-cli-compose > /dev/null 2>&1
+                exec opencode web --hostname 0.0.0.0 --port 3000
+        working_dir: /workspace
+        networks:
+            - proxy
+        environment:
+            - TZ=Europe/Amsterdam
+            - OPENCODE_SERVER_PASSWORD=${OPENCODE_PASSWORD}
+            - NTFY_TOKEN=${NTFY_TOKEN}
+        volumes:
+            - /opt/homelab:/workspace
+            - opencode_data:/root/.local/share/opencode
+            - /var/run/docker.sock:/var/run/docker.sock
+        labels:
+            kuma.opencode.http.name: OpenCode
+            kuma.opencode.http.url: https://opencode.home.pawelprotas.com
+            kuma.opencode.http.parent_name: services-group
+            kuma.opencode.http.authMethod: basic
+            kuma.opencode.http.basic_auth_user: opencode
+            kuma.opencode.http.basic_auth_pass: ${OPENCODE_PASSWORD}
+            kuma.opencode.http.notification_name_list: '["ntfy-alerts"]'
+
+    ntfy:
+        image: binwiederhier/ntfy:v2.19.2
+        container_name: ntfy
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 128m
+        command:
+            - serve
+        healthcheck:
+            test: ["CMD", "wget", "--spider", "-q", "http://localhost:80/v1/health"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+        networks:
+            - proxy
+        environment:
+            - TZ=Europe/Amsterdam
+            - NTFY_BASE_URL=https://ntfy.home.pawelprotas.com
+            - NTFY_UPSTREAM_BASE_URL=https://ntfy.sh
+            - NTFY_AUTH_DEFAULT_ACCESS=deny-all
+            - NTFY_AUTH_FILE=/var/lib/ntfy/auth.db
+            - NTFY_CACHE_FILE=/var/lib/ntfy/cache.db
+        volumes:
+            - ntfy_data:/var/lib/ntfy
+        labels:
+            kuma.ntfy.http.name: Ntfy
+            kuma.ntfy.http.url: https://ntfy.home.pawelprotas.com/v1/health
+            kuma.ntfy.http.parent_name: services-group
+            kuma.ntfy.http.notification_name_list: '["ntfy-alerts"]'
+
+    grafana-ntfy:
+        image: homelab-grafana-ntfy:latest
+        container_name: grafana-ntfy
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 64m
+        environment:
+            - TZ=Europe/Amsterdam
+        command:
+            - -ntfy-url=http://ntfy:80/alerts
+        networks:
+            - proxy
+        depends_on:
+            ntfy:
+                condition: service_healthy
+
+    isponsorblocktv:
+        image: ghcr.io/dmunozv04/isponsorblocktv:v2.6.1
+        container_name: isponsorblocktv
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 256m
+        network_mode: host
+        environment:
+            - TZ=Europe/Amsterdam
+        volumes:
+            - ./isponsorblocktv:/app/data
+        labels:
+            kuma.isponsorblocktv.docker.name: iSponsorBlockTV
+            kuma.isponsorblocktv.docker.docker_host: 1
+            kuma.isponsorblocktv.docker.docker_container: isponsorblocktv
+            kuma.isponsorblocktv.docker.parent_name: services-group
+            kuma.isponsorblocktv.docker.notification_name_list: '["ntfy-alerts"]'
+
+    forgejo:
+        image: codeberg.org/forgejo/forgejo:14
+        container_name: forgejo
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 512m
+        healthcheck:
+            test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+        ports:
+            - "222:22"
+        networks:
+            - proxy
+        environment:
+            - TZ=Europe/Amsterdam
+            - USER_UID=1000
+            - USER_GID=1000
+            - FORGEJO__server__DOMAIN=forgejo.home.pawelprotas.com
+            - FORGEJO__server__ROOT_URL=https://forgejo.home.pawelprotas.com/
+            - FORGEJO__server__SSH_DOMAIN=forgejo.home.pawelprotas.com
+            - FORGEJO__server__SSH_PORT=222
+            - FORGEJO__service__DISABLE_REGISTRATION=true
+            - FORGEJO__service__REQUIRE_SIGNIN_VIEW=true
+        volumes:
+            - forgejo_data:/data
+        labels:
+            kuma.forgejo.http.name: Forgejo
+            kuma.forgejo.http.url: http://forgejo:3000/
+            kuma.forgejo.http.parent_name: services-group
+            kuma.forgejo.http.notification_name_list: '["ntfy-alerts"]'
+
+    barber-checker:
+        image: alpine:3.21
+        container_name: barber-checker
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 64m
+        profiles:
+            - barber
+        entrypoint: ["/bin/sh", "-c", "apk add --no-cache curl jq && exec /app/check.sh"]
+        networks:
+            - proxy
+        environment:
+            - TZ=Europe/Amsterdam
+            - NTFY_URL=http://ntfy:80
+            - NTFY_TOPIC=barber
+            - NTFY_TOKEN=${NTFY_TOKEN}
+        volumes:
+            - ./barber-checker:/app:ro
+            - barber_checker_data:/data
+        depends_on:
+            ntfy:
+                condition: service_healthy
+
+networks:
+    proxy:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 172.20.0.0/24
+    dns:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 172.20.1.0/24
+    unifi:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 172.20.2.0/24
+    kuma:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 172.20.3.0/24
+
+volumes:
+    uptime_kuma_data:
+    speedtest_data:
+    caddy_data:
+    caddy_config:
+    autokuma_data:
+    unifi_db_data:
+    unifi_data:
+    tailscale_data:
+    opencode_data:
+    influxdb_data:
+    grafana_data:
+    ntfy_data:
+    barber_checker_data:
+    diun_data:
+    forgejo_data:

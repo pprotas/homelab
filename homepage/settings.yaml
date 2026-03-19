@@ -1,0 +1,11 @@
+title: Home
+theme: dark
+color: slate
+headerStyle: clean
+layout:
+    Network:
+        icon: mdi-network
+    Monitoring:
+        icon: mdi-chart-line
+    Tools:
+        icon: mdi-wrench

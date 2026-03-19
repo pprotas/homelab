@@ -1,0 +1,26 @@
+.env
+._*
+.DS_Store
+*.log
+*.bak
+*.tmp
+*.swp
+
+# Claude Code (legacy, replaced by OpenCode)
+.Claude/
+
+# Unbound runtime
+unbound/dev/
+unbound/unbound.pid
+unbound/root.hints
+unbound/var/
+
+# Homepage logs
+homepage/logs/
+
+# AdGuard Home
+adguardhome/conf/AdGuardHome.yaml
+adguardhome/work/data/
+
+# iSponsorBlockTV (contains device pairing token)
+isponsorblocktv/config.json

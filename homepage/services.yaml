@@ -1,0 +1,81 @@
+- Network:
+      - UniFi Network Application:
+            href: https://unifi.home.pawelprotas.com
+            icon: unifi.png
+            server: my-pi
+            container: unifi-network-application
+
+      - AdGuard Home:
+            href: https://adguard.home.pawelprotas.com
+            icon: adguard-home.png
+            server: my-pi
+            container: adguardhome
+            widgets:
+                - type: adguard
+                  url: http://adguardhome:3000
+                  username: {{HOMEPAGE_VAR_ADGUARD_USERNAME}}
+                  password: {{HOMEPAGE_VAR_ADGUARD_PASSWORD}}
+
+      - Caddy:
+            icon: caddy.png
+            server: my-pi
+            container: caddy
+            widgets:
+                - type: caddy
+                  url: http://caddy:2019
+
+      - Tailscale:
+            icon: tailscale.png
+            server: my-pi
+            container: tailscale
+- Monitoring:
+      - Uptime Kuma:
+            href: https://uptime.home.pawelprotas.com
+            icon: uptime-kuma.png
+            server: my-pi
+            container: uptime-kuma
+            widgets:
+                - type: uptimekuma
+                  url: http://uptime-kuma:3001
+                  slug: services
+      - Grafana:
+            href: https://grafana.home.pawelprotas.com
+            icon: grafana.png
+            server: my-pi
+            container: grafana
+            widgets:
+                - type: grafana
+                  version: 2
+                  url: http://grafana:3000
+                  username: {{HOMEPAGE_VAR_GRAFANA_USERNAME}}
+                  password: {{HOMEPAGE_VAR_GRAFANA_PASSWORD}}
+      - Speedtest Tracker:
+            href: https://speedtest.home.pawelprotas.com
+            icon: speedtest-tracker.png
+            server: my-pi
+            container: speedtest-tracker
+            widgets:
+                - type: speedtest
+                  url: http://speedtest-tracker:80
+                  password: {{HOMEPAGE_VAR_SPEEDTEST_API_KEY}}
+- Media:
+      - iSponsorBlockTV:
+            icon: mdi-youtube
+            server: my-pi
+            container: isponsorblocktv
+- Tools:
+      - Forgejo:
+            href: https://forgejo.home.pawelprotas.com
+            icon: forgejo.png
+            server: my-pi
+            container: forgejo
+      - OpenCode:
+            href: https://opencode.home.pawelprotas.com
+            icon: mdi-robot
+            server: my-pi
+            container: opencode
+      - Ntfy:
+            href: https://ntfy.home.pawelprotas.com
+            icon: ntfy.png
+            server: my-pi
+            container: ntfy

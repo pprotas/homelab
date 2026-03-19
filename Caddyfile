@@ -1,0 +1,50 @@
+{
+	admin 0.0.0.0:2019
+	acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+}
+
+servers {
+	metrics
+}
+
+adguard.home.pawelprotas.com {
+	reverse_proxy adguardhome:3000
+}
+
+uptime.home.pawelprotas.com {
+	reverse_proxy uptime-kuma:3001
+}
+
+speedtest.home.pawelprotas.com {
+	reverse_proxy speedtest-tracker:80
+}
+
+home.pawelprotas.com {
+	reverse_proxy homepage:3000
+}
+
+opencode.home.pawelprotas.com {
+	reverse_proxy opencode:3000
+}
+
+grafana.home.pawelprotas.com {
+	reverse_proxy grafana:3000
+}
+
+ntfy.home.pawelprotas.com {
+	reverse_proxy ntfy:80
+}
+
+forgejo.home.pawelprotas.com {
+	reverse_proxy forgejo:3000
+}
+
+unifi.home.pawelprotas.com {
+	reverse_proxy https://unifi-network-application:8443 {
+		header_up Origin https://unifi-network-application:8443
+		header_up Referer https://unifi-network-application:8443
+		transport http {
+			tls_insecure_skip_verify
+		}
+	}
+}

@@ -1,0 +1,426 @@
+apiVersion: 1
+
+groups:
+    - orgId: 1
+      name: System Alerts
+      folder: Homelab
+      interval: 1m
+      rules:
+          - uid: high-cpu-usage
+            title: High CPU Usage
+            condition: C
+            data:
+                - refId: A
+                  relativeTimeRange:
+                      from: 300
+                      to: 0
+                  datasourceUid: influxdb
+                  model:
+                      refId: A
+                      query: |
+                          from(bucket: "glances")
+                            |> range(start: -5m)
+                            |> filter(fn: (r) =>
+                              r._measurement == "cpu" and
+                              (r._field == "user" or r._field == "system") and
+                              r.hostname == "pi"
+                            )
+                            |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)
+                            |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
+                            |> map(fn: (r) => ({ r with _value: r.user + r.system }))
+                            |> keep(columns: ["_time", "_value"])
+                      intervalMs: 15000
+                      maxDataPoints: 43200
+                - refId: B
+                  relativeTimeRange:
+                      from: 300
+                      to: 0
+                  datasourceUid: __expr__
+                  model:
+                      refId: B
+                      type: reduce
+                      datasource:
+                          type: __expr__
+                          uid: __expr__
+                      conditions:
+                          - type: query
+                            evaluator:
+                                type: gt
+                                params: [0]
+                      reducer: mean
+                      expression: A
+                - refId: C
+                  relativeTimeRange:
+                      from: 300
+                      to: 0
+                  datasourceUid: __expr__
+                  model:
+                      refId: C
+                      type: threshold
+                      datasource:
+                          type: __expr__
+                          uid: __expr__
+                      conditions:
+                          - type: query
+                            evaluator:
+                                type: gt
+                                params: [90]
+                      expression: B
+            for: 5m
+            annotations:
+                summary: 'CPU usage is at {{ printf "%.1f" $values.B.Value }}% (threshold: 90%)'
+            labels:
+                severity: warning
+            noDataState: OK
+            execErrState: Alerting
+
+          - uid: high-memory-usage
+            title: High Memory Usage
+            condition: C
+            data:
+                - refId: A
+                  relativeTimeRange:
+                      from: 300
+                      to: 0
+                  datasourceUid: influxdb
+                  model:
+                      refId: A
+                      query: |
+                          used = from(bucket: "glances")
+                            |> range(start: -5m)
+                            |> filter(fn: (r) =>
+                              r._measurement == "mem" and
+                              r._field == "used" and
+                              r.hostname == "pi"
+                            )
+                            |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)
+
+                          total = from(bucket: "glances")
+                            |> range(start: -5m)
+                            |> filter(fn: (r) =>
+                              r._measurement == "mem" and
+                              r._field == "total" and
+                              r.hostname == "pi"
+                            )
+                            |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)
+
+                          join(tables: {used: used, total: total}, on: ["_time"])
+                            |> map(fn: (r) => ({ r with _value: (r._value_used / r._value_total) * 100.0 }))
+                            |> keep(columns: ["_time", "_value"])
+                      intervalMs: 15000
+                      maxDataPoints: 43200
+                - refId: B
+                  relativeTimeRange:
+                      from: 300
+                      to: 0
+                  datasourceUid: __expr__
+                  model:
+                      refId: B
+                      type: reduce
+                      datasource:
+                          type: __expr__
+                          uid: __expr__
+                      conditions:
+                          - type: query
+                            evaluator:
+                                type: gt
+                                params: [0]
+                      reducer: mean
+                      expression: A
+                - refId: C
+                  relativeTimeRange:
+                      from: 300
+                      to: 0
+                  datasourceUid: __expr__
+                  model:
+                      refId: C
+                      type: threshold
+                      datasource:
+                          type: __expr__
+                          uid: __expr__
+                      conditions:
+                          - type: query
+                            evaluator:
+                                type: gt
+                                params: [85]
+                      expression: B
+            for: 5m
+            annotations:
+                summary: 'Memory usage is at {{ printf "%.1f" $values.B.Value }}% (threshold: 85%)'
+            labels:
+                severity: warning
+            noDataState: OK
+            execErrState: Alerting
+
+          - uid: disk-almost-full
+            title: Disk Almost Full
+            condition: C
+            data:
+                - refId: A
+                  relativeTimeRange:
+                      from: 300
+                      to: 0
+                  datasourceUid: influxdb
+                  model:
+                      refId: A
+                      query: |
+                          from(bucket: "glances")
+                            |> range(start: -5m)
+                            |> filter(fn: (r) =>
+                              r._measurement == "fs" and
+                              r._field == "percent" and
+                              r.hostname == "pi"
+                            )
+                            |> last()
+                      intervalMs: 15000
+                      maxDataPoints: 43200
+                - refId: B
+                  relativeTimeRange:
+                      from: 300
+                      to: 0
+                  datasourceUid: __expr__
+                  model:
+                      refId: B
+                      type: reduce
+                      datasource:
+                          type: __expr__
+                          uid: __expr__
+                      conditions:
+                          - type: query
+                            evaluator:
+                                type: gt
+                                params: [0]
+                      reducer: max
+                      expression: A
+                - refId: C
+                  relativeTimeRange:
+                      from: 300
+                      to: 0
+                  datasourceUid: __expr__
+                  model:
+                      refId: C
+                      type: threshold
+                      datasource:
+                          type: __expr__
+                          uid: __expr__
+                      conditions:
+                          - type: query
+                            evaluator:
+                                type: gt
+                                params: [85]
+                      expression: B
+            for: 0s
+            annotations:
+                summary: 'Disk usage is at {{ printf "%.1f" $values.B.Value }}% (threshold: 85%)'
+            labels:
+                severity: critical
+            noDataState: OK
+            execErrState: Alerting
+
+          - uid: high-cpu-temperature
+            title: High CPU Temperature
+            condition: C
+            data:
+                - refId: A
+                  relativeTimeRange:
+                      from: 300
+                      to: 0
+                  datasourceUid: influxdb
+                  model:
+                      refId: A
+                      query: |
+                          from(bucket: "glances")
+                            |> range(start: -5m)
+                            |> filter(fn: (r) =>
+                              r._measurement == "sensors" and
+                              r._field == "value" and
+                              r.hostname == "pi"
+                            )
+                            |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)
+                      intervalMs: 15000
+                      maxDataPoints: 43200
+                - refId: B
+                  relativeTimeRange:
+                      from: 300
+                      to: 0
+                  datasourceUid: __expr__
+                  model:
+                      refId: B
+                      type: reduce
+                      datasource:
+                          type: __expr__
+                          uid: __expr__
+                      conditions:
+                          - type: query
+                            evaluator:
+                                type: gt
+                                params: [0]
+                      reducer: max
+                      expression: A
+                - refId: C
+                  relativeTimeRange:
+                      from: 300
+                      to: 0
+                  datasourceUid: __expr__
+                  model:
+                      refId: C
+                      type: threshold
+                      datasource:
+                          type: __expr__
+                          uid: __expr__
+                      conditions:
+                          - type: query
+                            evaluator:
+                                type: gt
+                                params: [80]
+                      expression: B
+            for: 5m
+            annotations:
+                summary: 'CPU temperature is {{ printf "%.1f" $values.B.Value }}°C (threshold: 80°C)'
+            labels:
+                severity: warning
+            noDataState: OK
+            execErrState: Alerting
+
+          - uid: swap-in-use
+            title: Swap In Use
+            condition: C
+            data:
+                - refId: A
+                  relativeTimeRange:
+                      from: 600
+                      to: 0
+                  datasourceUid: influxdb
+                  model:
+                      refId: A
+                      query: |
+                          from(bucket: "glances")
+                            |> range(start: -10m)
+                            |> filter(fn: (r) =>
+                              r._measurement == "memswap" and
+                              r._field == "used" and
+                              r.hostname == "pi"
+                            )
+                            |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)
+                            |> map(fn: (r) => ({ r with _value: r._value / 1048576.0 }))
+                      intervalMs: 15000
+                      maxDataPoints: 43200
+                - refId: B
+                  relativeTimeRange:
+                      from: 600
+                      to: 0
+                  datasourceUid: __expr__
+                  model:
+                      refId: B
+                      type: reduce
+                      datasource:
+                          type: __expr__
+                          uid: __expr__
+                      conditions:
+                          - type: query
+                            evaluator:
+                                type: gt
+                                params: [0]
+                      reducer: mean
+                      expression: A
+                - refId: C
+                  relativeTimeRange:
+                      from: 600
+                      to: 0
+                  datasourceUid: __expr__
+                  model:
+                      refId: C
+                      type: threshold
+                      datasource:
+                          type: __expr__
+                          uid: __expr__
+                      conditions:
+                          - type: query
+                            evaluator:
+                                type: gt
+                                params: [500]
+                      expression: B
+            for: 10m
+            annotations:
+                summary: 'Swap usage is {{ printf "%.0f" $values.B.Value }} MB (threshold: 500 MB)'
+            labels:
+                severity: info
+            noDataState: OK
+            execErrState: Alerting
+
+          - uid: high-load-average
+            title: High Load Average
+            condition: C
+            data:
+                - refId: A
+                  relativeTimeRange:
+                      from: 300
+                      to: 0
+                  datasourceUid: influxdb
+                  model:
+                      refId: A
+                      query: |
+                          cpucore = from(bucket: "glances")
+                            |> range(start: -5m)
+                            |> filter(fn: (r) =>
+                              r._measurement == "load" and
+                              r._field == "cpucore" and
+                              r.hostname == "pi"
+                            )
+                            |> last()
+                            |> findRecord(fn: (key) => true, idx: 0)
+
+                          from(bucket: "glances")
+                            |> range(start: -5m)
+                            |> filter(fn: (r) =>
+                              r._measurement == "load" and
+                              r._field == "min5" and
+                              r.hostname == "pi"
+                            )
+                            |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)
+                            |> map(fn: (r) => ({ r with _value: r._value / float(v: cpucore._value) * 100.0 }))
+                            |> keep(columns: ["_time", "_value"])
+                      intervalMs: 15000
+                      maxDataPoints: 43200
+                - refId: B
+                  relativeTimeRange:
+                      from: 300
+                      to: 0
+                  datasourceUid: __expr__
+                  model:
+                      refId: B
+                      type: reduce
+                      datasource:
+                          type: __expr__
+                          uid: __expr__
+                      conditions:
+                          - type: query
+                            evaluator:
+                                type: gt
+                                params: [0]
+                      reducer: mean
+                      expression: A
+                - refId: C
+                  relativeTimeRange:
+                      from: 300
+                      to: 0
+                  datasourceUid: __expr__
+                  model:
+                      refId: C
+                      type: threshold
+                      datasource:
+                          type: __expr__
+                          uid: __expr__
+                      conditions:
+                          - type: query
+                            evaluator:
+                                type: gt
+                                params: [100]
+                      expression: B
+            for: 5m
+            annotations:
+                summary: 'Load average is {{ printf "%.0f" $values.B.Value }}% of core count (threshold: 100%)'
+            labels:
+                severity: warning
+            noDataState: OK
+            execErrState: Alerting

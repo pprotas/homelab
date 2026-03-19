@@ -24,7 +24,7 @@
 - **Grafana** -- dashboards and alerting, provisioned via YAML files in `grafana/provisioning/`
 - **grafana-ntfy** -- sidecar proxy that translates Grafana webhook alerts into clean ntfy notifications (custom-built arm64 image `homelab-grafana-ntfy:latest`)
 - **Homepage** -- dashboard
-- **OpenCode** -- AI coding agent web UI, mounts `/opt/homelab` as `/workspace`
+- **OpenCode** -- AI coding agent web UI, mounts `/opt/homelab` as `/workspace`; entrypoint installs `git`, `openssh-client`, `curl` on every start and configures SSH for Forgejo push access
 - **Forgejo** -- self-hosted Git forge (`forgejo.home.pawelprotas.com`), SQLite backend, SSH on host port 222; push mirror to GitHub (`pprotas/homelab`) via SSH deploy key, syncs on every push
 - **Ntfy** -- self-hosted push notification server (`ntfy.home.pawelprotas.com`), auth enabled (`deny-all` default access), forwards push wake-ups to `ntfy.sh` upstream for iOS/Android instant delivery (message content stays local)
 - **iSponsorBlockTV** -- automatically skips sponsor segments, self-promos, interaction reminders, and previews on YouTube TV apps using the SponsorBlock API; also mutes and skips ads; runs with `network_mode: host` for device communication; config in `isponsorblocktv/config.json`

@@ -412,7 +412,11 @@ services:
             - /bin/sh
             - -c
             - |
-                apk add --no-cache docker-cli docker-cli-compose > /dev/null 2>&1
+                apk add --no-cache docker-cli docker-cli-compose git openssh-client curl > /dev/null 2>&1
+                git config --global --add safe.directory /workspace
+                mkdir -p ~/.ssh && chmod 700 ~/.ssh
+                printf '%s\n' 'Host forgejo.home.pawelprotas.com' '    HostName forgejo' '    Port 22' '    User git' '    IdentityFile /workspace/.opencode/forgejo-ssh-key' '    StrictHostKeyChecking no' > ~/.ssh/config
+                chmod 600 ~/.ssh/config
                 exec opencode web --hostname 0.0.0.0 --port 3000
         working_dir: /workspace
         networks:

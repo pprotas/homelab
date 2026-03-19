@@ -32,21 +32,22 @@ graph TD
 
 | Service | Purpose |
 |---|---|
-| Caddy | Reverse proxy, TLS termination |
-| AdGuard Home | DNS ad blocker |
-| Unbound | Recursive DNS resolver |
-| UniFi + MongoDB | Network controller |
-| Tailscale | VPN / subnet router |
-| Uptime Kuma + AutoKuma | Uptime monitoring |
-| Grafana + InfluxDB | Metrics dashboards & alerting |
-| Glances | System monitoring agent |
-| Speedtest Tracker | Scheduled speed tests |
-| Forgejo | Git forge |
-| Homepage | Dashboard |
-| Ntfy | Push notifications |
-| Diun | Container update notifier |
-| OpenCode | AI coding agent |
-| iSponsorBlockTV | YouTube TV ad/sponsor skipper |
+| [Caddy](https://github.com/caddyserver/caddy) | Reverse proxy, TLS termination |
+| [AdGuard Home](https://github.com/AdguardTeam/AdGuardHome) | DNS ad blocker |
+| [Unbound](https://github.com/NLnetLabs/unbound) | Recursive DNS resolver |
+| [UniFi](https://github.com/linuxserver/docker-unifi-network-application) + [MongoDB](https://github.com/mongodb/mongo) | Network controller |
+| [Tailscale](https://github.com/tailscale/tailscale) | VPN / subnet router |
+| [Uptime Kuma](https://github.com/louislam/uptime-kuma) + [AutoKuma](https://github.com/BigBoot/AutoKuma) | Uptime monitoring |
+| [Grafana](https://github.com/grafana/grafana) + [InfluxDB](https://github.com/influxdata/influxdb) | Metrics dashboards & alerting |
+| [Glances](https://github.com/nicolargo/glances) | System monitoring agent |
+| [Speedtest Tracker](https://github.com/alexjustesen/speedtest-tracker) | Scheduled speed tests |
+| [Forgejo](https://codeberg.org/forgejo/forgejo) | Git forge |
+| [Homepage](https://github.com/gethomepage/homepage) | Dashboard |
+| [Ntfy](https://github.com/binwiederhier/ntfy) | Push notifications |
+| [Diun](https://github.com/crazy-max/diun) | Container update notifier |
+| [OpenCode](https://github.com/anomalyco/opencode) | AI coding agent |
+| [iSponsorBlockTV](https://github.com/dmunozv04/iSponsorBlockTV) | YouTube TV ad/sponsor skipper |
+| Barber Checker | Barber appointment availability notifier |
 
 ## Getting Started
 

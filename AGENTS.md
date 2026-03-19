@@ -53,6 +53,35 @@ All secrets are centralized in `.env` and injected via variable substitution:
 
 Never hardcode credentials directly in config files. Add new secrets to `.env` and reference them.
 
+## Git Conventions
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/).
+
+Format: `<type>(<scope>): <description>`
+
+**Types:**
+
+- `feat` -- new feature or capability
+- `fix` -- bug fix
+- `refactor` -- code change that neither fixes a bug nor adds a feature
+- `docs` -- documentation only
+- `chore` -- maintenance tasks (dependency updates, CI, config changes)
+- `style` -- formatting, whitespace, etc. (no logic change)
+
+**Scope** is optional but encouraged -- use the service or config name (e.g. `caddy`, `grafana`, `dns`, `docker-compose`).
+
+**Examples:**
+
+```
+feat(grafana): add CPU temperature alert rule
+fix(caddy): correct upstream for UniFi websocket
+chore: update all container images
+docs: add barber-checker to README
+refactor(dns): simplify Unbound forwarding config
+```
+
+Keep the subject line lowercase, imperative mood, no trailing period. Body and footer are optional.
+
 ## Running Docker from OpenCode
 
 OpenCode has Docker access via the mounted socket. Before running any `docker compose` commands, **load the `docker` skill** for the required flags and usage patterns.

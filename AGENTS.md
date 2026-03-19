@@ -33,9 +33,10 @@
 ## Key Config Files
 
 - `docker-compose.yml` -- all service definitions
-- `Caddyfile` -- reverse proxy routes and TLS config
+- `caddy/Caddyfile` -- reverse proxy routes and TLS config
 - `.env` -- all secrets and credentials (Cloudflare token, MongoDB creds, API keys, etc.)
 - `unbound/unbound.conf` -- recursive DNS config
+- `unifi/init-mongo.sh` -- MongoDB init script for UniFi
 - `homepage/` -- dashboard config (services.yaml, settings.yaml, etc.)
 - `grafana/provisioning/` -- Grafana datasources, dashboards, and alerting config (contact points, policies, alert rules)
 - `grafana-ntfy/Dockerfile` -- builds the arm64 grafana-ntfy proxy image
@@ -47,14 +48,14 @@
 All secrets are centralized in `.env` and injected via variable substitution:
 
 - **docker-compose.yml** uses `${VAR}` syntax (standard Compose interpolation)
-- **init-mongo.sh** reads `$MONGO_USER` / `$MONGO_PASS` from the container environment
+- **unifi/init-mongo.sh** reads `$MONGO_USER` / `$MONGO_PASS` from the container environment
 - **homepage/services.yaml** uses `{{HOMEPAGE_VAR_XXX}}` syntax (Homepage's env secret mechanism); the corresponding `HOMEPAGE_VAR_*` env vars are passed to the Homepage container in docker-compose.yml
 
 Never hardcode credentials directly in config files. Add new secrets to `.env` and reference them.
 
-## Running Docker from Claude Code
+## Running Docker from OpenCode
 
-Claude Code has Docker access via the mounted socket. Before running any `docker compose` commands, **load the `docker` skill** for the required flags and usage patterns.
+OpenCode has Docker access via the mounted socket. Before running any `docker compose` commands, **load the `docker` skill** for the required flags and usage patterns.
 
 ## DNS Architecture
 

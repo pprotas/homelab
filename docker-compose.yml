@@ -32,7 +32,7 @@ services:
             - TZ=Europe/Amsterdam
             - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
         volumes:
-            - ./Caddyfile:/etc/caddy/Caddyfile
+            - ./caddy/Caddyfile:/etc/caddy/Caddyfile
             - caddy_data:/data
             - caddy_config:/config
         labels:
@@ -241,7 +241,7 @@ services:
             - MONGO_DBNAME=unifi
         volumes:
             - unifi_db_data:/data/db
-            - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
+            - ./unifi/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
 
     unifi-network-application:
         image: lscr.io/linuxserver/unifi-network-application:10.1.89

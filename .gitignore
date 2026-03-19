@@ -24,3 +24,7 @@ adguardhome/work/data/
 
 # iSponsorBlockTV (contains device pairing token)
 isponsorblocktv/config.json
+
+# OpenCode SSH key for Forgejo
+.opencode/forgejo-ssh-key
+.opencode/forgejo-ssh-key.pub

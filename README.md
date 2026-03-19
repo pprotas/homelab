@@ -6,14 +6,10 @@ A single Docker Compose stack running on a Raspberry Pi, serving as a personal p
 
 ```mermaid
 graph TD
-    CF["Cloudflare DNS<br>*.home.pawelprotas.com → Pi LAN IP"] --> Caddy["Caddy<br>reverse proxy + TLS"]
-    Caddy --> G1["Forgejo<br>AdGuard<br>UniFi"]
-    Caddy --> G2["Homepage<br>Uptime Kuma<br>OpenCode"]
-    Caddy --> G3["Grafana<br>Speedtest<br>Glances"]
-
-    DNS["Clients → AdGuard Home :53 → Unbound :5335 → Root DNS"]
-
-    style DNS fill:none,stroke:none
+    CF["Cloudflare DNS<br>*.home.pawelprotas.com → Pi LAN IP"]
+    CF --> Caddy["Caddy<br>reverse proxy + TLS"]
+    Caddy --> Services["Forgejo · AdGuard · UniFi<br>Homepage · Uptime Kuma · OpenCode<br>Grafana · Speedtest · Glances"]
+    Clients["Clients"] --> AdGuard["AdGuard Home :53"] --> Unbound["Unbound :5335"] --> Root["Root DNS"]
 ```
 
 ## What This Covers

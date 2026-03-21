@@ -46,6 +46,7 @@ graph TD
 | [Diun](https://github.com/crazy-max/diun) | Container update notifier |
 | [OpenCode](https://github.com/anomalyco/opencode) | AI coding agent |
 | [iSponsorBlockTV](https://github.com/dmunozv04/iSponsorBlockTV) | YouTube TV ad/sponsor skipper |
+| [Open WebUI](https://github.com/open-webui/open-webui) | LLM chat interface |
 | Barber Checker | Barber appointment availability notifier |
 
 ## Getting Started

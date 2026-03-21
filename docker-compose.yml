@@ -499,6 +499,34 @@ services:
             - beszel_socket:/beszel_socket
             - /var/run/docker.sock:/var/run/docker.sock:ro
 
+    open-webui:
+        image: ghcr.io/open-webui/open-webui:v0.8.6-slim
+        container_name: open-webui
+        restart: unless-stopped
+        logging: *default-logging
+        mem_limit: 1g
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8080"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 120s
+        networks:
+            - proxy
+        environment:
+            - TZ=Europe/Amsterdam
+            - OLLAMA_BASE_URLS=
+            - WEBUI_AUTH=False
+            - OPENAI_API_BASE_URL=https://opencodego.home.pawelprotas.com/zen/go/v1
+            - OPENAI_API_KEY=${OPENCODE_API_KEY}
+        volumes:
+            - open_webui_data:/app/backend/data
+        labels:
+            kuma.open-webui.http.name: Open WebUI
+            kuma.open-webui.http.url: https://openwebui.home.pawelprotas.com
+            kuma.open-webui.http.parent_name: services-group
+            kuma.open-webui.http.notification_name_list: '["ntfy-alerts"]'
+
     barber-checker:
         image: alpine:3.21
         container_name: barber-checker
@@ -560,3 +588,4 @@ volumes:
     forgejo_data:
     beszel_data:
     beszel_socket:
+    open_webui_data:

@@ -80,3 +80,8 @@
             icon: ntfy.png
             server: my-pi
             container: ntfy
+      - Open WebUI:
+            href: https://openwebui.home.pawelprotas.com
+            icon: open-webui.png
+            server: my-pi
+            container: open-webui

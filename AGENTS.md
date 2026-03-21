@@ -26,6 +26,7 @@
 - **Ntfy** -- self-hosted push notification server (`ntfy.home.pawelprotas.com`), auth enabled (`deny-all` default access), forwards push wake-ups to `ntfy.sh` upstream for iOS/Android instant delivery (message content stays local)
 - **iSponsorBlockTV** -- automatically skips sponsor segments, self-promos, interaction reminders, and previews on YouTube TV apps using the SponsorBlock API; also mutes and skips ads; runs with `network_mode: host` for device communication; config in `isponsorblocktv/config.json`
 - **Barber Checker** -- polls SalonHub API every 5 min for barber appointment availability, notifies via ntfy topic `barber`; uses Docker Compose `barber` profile so it doesn't start with `docker compose up -d` -- start with `docker compose --profile barber up -d barber-checker`, stop with `docker compose stop barber-checker`
+- **Open WebUI** -- self-hosted web UI for LLM chat, proxied via Caddy at `openwebui.home.pawelprotas.com`; configured with `WEBUI_AUTH=False` for anonymous access and uses `OPENCODE_API_KEY` for the OpenAI-compatible backend; accessible at `openwebui.home.pawelprotas.com`
 
 ## Key Config Files
 

@@ -39,6 +39,14 @@ beszel.home.pawelprotas.com {
 	reverse_proxy beszel:8090
 }
 
+openwebui.home.pawelprotas.com {
+	reverse_proxy open-webui:8080
+}
+
+opencodego.home.pawelprotas.com {
+	reverse_proxy https://opencode.ai
+}
+
 unifi.home.pawelprotas.com {
 	reverse_proxy https://unifi-network-application:8443 {
 		header_up Origin https://unifi-network-application:8443

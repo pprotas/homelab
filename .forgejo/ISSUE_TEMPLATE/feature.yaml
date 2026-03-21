@@ -1,0 +1,43 @@
+name: Feature Request
+about: Propose a new service or feature for the homelab
+title: ''
+labels:
+  - feature
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Brief description of the feature or service to integrate.
+      placeholder: What do you want to add and why?
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: Checklist of work items needed to implement this feature.
+      value: |
+        - [ ] Add service to `docker-compose.yml`
+        - [ ] Configure Caddy reverse proxy route
+        - [ ] Add secrets/env vars to `.env`
+        - [ ] Add to Homepage dashboard
+    validations:
+      required: false
+  - type: textarea
+    id: links
+    attributes:
+      label: Links
+      description: Relevant URLs (docs, repos, references).
+      placeholder: |
+        - https://example.com
+    validations:
+      required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Any extra context, constraints, or considerations.
+      placeholder: e.g. resource constraints, dependencies on other services, etc.
+    validations:
+      required: false

@@ -22,8 +22,8 @@ Always pass `--repo pawel/homelab` (or the appropriate `owner/repo`) since OpenC
 # List open issues
 tea issues --login forgejo --repo pawel/homelab
 
-# Create an issue
-tea issues create --login forgejo --repo pawel/homelab --title "Issue title" --body "Description"
+# Create an issue (note: use --description, NOT --body)
+tea issues create --login forgejo --repo pawel/homelab --title "Issue title" --description "Description"
 
 # View a specific issue
 tea issues --login forgejo --repo pawel/homelab 42

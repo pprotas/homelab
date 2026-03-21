@@ -55,6 +55,68 @@ tea labels --login forgejo --repo pawel/homelab
 | `--state open\|closed` | Filter by state |
 | `--limit N` | Limit results |
 
+### Issue templates
+
+The `tea` CLI does not support issue templates -- it bypasses them entirely. When creating issues via CLI, manually replicate the template structure in the `--description` field. Do NOT use conventional commit format in issue titles (that's for commits only).
+
+**Feature request** -- use this structure:
+
+```
+tea issues create --login forgejo --repo pawel/homelab \
+  --title "Integrate Foo Service" \
+  --description "$(cat <<'EOF'
+## Summary
+
+Brief description of the feature or service.
+
+## Tasks
+
+- [ ] Add service to `docker-compose.yml`
+- [ ] Configure Caddy reverse proxy route
+- [ ] Add secrets/env vars to `.env`
+- [ ] Add to Homepage dashboard
+
+## Links
+
+- https://example.com
+
+## Additional Notes
+
+Any extra context, constraints, or considerations.
+EOF
+)"
+```
+
+**Bug report** -- use this structure:
+
+```
+tea issues create --login forgejo --repo pawel/homelab \
+  --title "Something is broken" \
+  --description "$(cat <<'EOF'
+## Description
+
+What's broken? What did you expect to happen?
+
+## Steps to Reproduce
+
+1. ...
+2. ...
+
+## Relevant Logs
+
+```
+paste logs here
+```
+
+## Additional Notes
+
+Any extra context.
+EOF
+)"
+```
+
+Omit empty sections rather than leaving them blank.
+
 ### Token scopes
 
 The `opencode` user's token (`opencode-api-v2`) has these scopes:

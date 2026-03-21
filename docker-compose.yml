@@ -424,6 +424,10 @@ services:
                 mkdir -p ~/.ssh && chmod 700 ~/.ssh
                 printf '%s\n' 'Host forgejo.home.pawelprotas.com' '    HostName forgejo' '    Port 22' '    User git' '    IdentityFile /workspace/.opencode/forgejo-ssh-key' '    StrictHostKeyChecking no' > ~/.ssh/config
                 chmod 600 ~/.ssh/config
+                if ! command -v tea > /dev/null 2>&1; then
+                  curl -sL https://dl.gitea.com/tea/0.12.0/tea-0.12.0-linux-arm64 -o /usr/local/bin/tea && chmod +x /usr/local/bin/tea
+                fi
+                tea login add --name forgejo --url https://forgejo.home.pawelprotas.com --token "$FORGEJO_API_TOKEN" --ssh-key /workspace/.opencode/forgejo-ssh-key --no-version-check 2>/dev/null || true
                 exec opencode web --hostname 0.0.0.0 --port 3000
         working_dir: /workspace
         networks:
@@ -432,6 +436,7 @@ services:
             - TZ=Europe/Amsterdam
             - OPENCODE_SERVER_PASSWORD=${OPENCODE_PASSWORD}
             - NTFY_TOKEN=${NTFY_TOKEN}
+            - FORGEJO_API_TOKEN=${FORGEJO_API_TOKEN}
         volumes:
             - /opt/homelab:/workspace
             - opencode_data:/root/.local/share/opencode

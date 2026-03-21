@@ -24,8 +24,8 @@
 - **Grafana** -- dashboards and alerting, provisioned via YAML files in `grafana/provisioning/`
 - **grafana-ntfy** -- sidecar proxy that translates Grafana webhook alerts into clean ntfy notifications (custom-built arm64 image `homelab-grafana-ntfy:latest`)
 - **Homepage** -- dashboard
-- **OpenCode** -- AI coding agent web UI, mounts `/opt/homelab` as `/workspace`; entrypoint installs `git`, `openssh-client`, `curl` on every start and configures SSH for Forgejo push access
-- **Forgejo** -- self-hosted Git forge (`forgejo.home.pawelprotas.com`), SQLite backend, SSH on host port 222; push mirror to GitHub (`pprotas/homelab`) via SSH deploy key, syncs on every push
+- **OpenCode** -- AI coding agent web UI, mounts `/opt/homelab` as `/workspace`; entrypoint installs `git`, `openssh-client`, `curl`, and the `tea` CLI on every start; configures SSH for Forgejo push access and registers a `tea` login as the `opencode` Forgejo user via API token
+- **Forgejo** -- self-hosted Git forge (`forgejo.home.pawelprotas.com`), SQLite backend, SSH on host port 222; push mirror to GitHub (`pprotas/homelab`) via SSH deploy key, syncs on every push; OpenCode interacts via `tea` CLI (issues, PRs) and Forgejo admin CLI via `docker exec` -- load the `forgejo` skill for usage patterns
 - **Ntfy** -- self-hosted push notification server (`ntfy.home.pawelprotas.com`), auth enabled (`deny-all` default access), forwards push wake-ups to `ntfy.sh` upstream for iOS/Android instant delivery (message content stays local)
 - **iSponsorBlockTV** -- automatically skips sponsor segments, self-promos, interaction reminders, and previews on YouTube TV apps using the SponsorBlock API; also mutes and skips ads; runs with `network_mode: host` for device communication; config in `isponsorblocktv/config.json`
 - **Barber Checker** -- polls SalonHub API every 5 min for barber appointment availability, notifies via ntfy topic `barber`; uses Docker Compose `barber` profile so it doesn't start with `docker compose up -d` -- start with `docker compose --profile barber up -d barber-checker`, stop with `docker compose stop barber-checker`

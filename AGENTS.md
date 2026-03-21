@@ -86,6 +86,10 @@ Keep the subject line lowercase, imperative mood, no trailing period. Body and f
 
 OpenCode has Docker access via the mounted socket. Before running any `docker compose` commands, **load the `docker` skill** for the required flags and usage patterns.
 
+## Interacting with Forgejo
+
+When interacting with the Forgejo instance (issues, PRs, repos, admin tasks, or any `forgejo.home.pawelprotas.com` URL), **load the `forgejo` skill** instead of using WebFetch. The skill has all the CLI commands, API patterns, and workflow conventions needed. Do not attempt to scrape the Forgejo web UI -- use the `tea` CLI and Forgejo API as documented in the skill.
+
 ## DNS Architecture
 
 ```

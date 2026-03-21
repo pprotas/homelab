@@ -162,3 +162,56 @@ docker exec -u git forgejo forgejo admin auth list
 - Always run as `-u git` -- Forgejo refuses to run as root.
 - The Forgejo container is on the `proxy` network, accessible from OpenCode.
 - The admin CLI talks directly to the database, no API token needed.
+
+## "Work" Project Board
+
+The `pawel/homelab` repo has a **kanban project board** called "Work" (project ID `1`), accessible in the Forgejo web UI at:
+
+```
+https://forgejo.home.pawelprotas.com/pawel/homelab/projects/1
+```
+
+### Columns
+
+The board uses the default Forgejo project columns:
+
+| Column | Purpose |
+|---|---|
+| **Uncategorized** | Newly added issues not yet triaged |
+| **To Do** | Triaged and ready to work on |
+| **In Progress** | Currently being worked on |
+| **Done** | Completed |
+
+### API limitations
+
+Forgejo 14.0.3 has **no REST API for project boards**. You cannot programmatically:
+- Add an issue to a project
+- Move an issue between columns
+- List project columns or cards
+
+The only project-related data available via API is on the **issue timeline** endpoint, which records when an issue is added to a project:
+
+```sh
+source /workspace/.env && curl -s \
+  "https://forgejo.home.pawelprotas.com/api/v1/repos/pawel/homelab/issues/5/timeline" \
+  -H "Authorization: token $FORGEJO_API_TOKEN" | python3 -c "
+import json, sys
+for e in json.load(sys.stdin):
+    if e.get('type') == 'project':
+        print(f'project_id={e[\"project_id\"]} old_project_id={e[\"old_project_id\"]}')"
+```
+
+### Workflow conventions
+
+Since project board management is web-UI-only, follow these conventions:
+
+1. **Creating issues** -- After creating an issue with `tea`, remind the user to add it to the "Work" project board in the Forgejo web UI. Include the direct URL:
+   ```
+   Add to project board: https://forgejo.home.pawelprotas.com/pawel/homelab/issues/<number>
+   ```
+
+2. **Starting work on an issue** -- When beginning work, remind the user to move the card to "In Progress" on the board.
+
+3. **Completing an issue** -- When closing an issue with `tea issues close`, remind the user to move the card to "Done" (or verify it moved automatically on close, depending on board settings).
+
+4. **All new issues belong on the board** -- Every issue in `pawel/homelab` should be tracked on the "Work" project. Always include the reminder when creating issues.

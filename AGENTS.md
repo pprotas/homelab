@@ -19,10 +19,7 @@
 - **Uptime Kuma** + **AutoKuma** -- uptime monitoring with auto-discovery via Docker labels
 - **Speedtest Tracker** -- scheduled speed tests, ntfy notifications for threshold breaches (configured via UI)
 - **Diun** -- Docker image update notifier, checks for container updates every 6 hours and sends native ntfy notifications to `alerts` topic
-- **Glances** -- system monitoring, exports metrics to InfluxDB
-- **InfluxDB** -- time-series database storing Glances metrics (Flux query language, bucket `glances`, org `homelab`)
-- **Grafana** -- dashboards and alerting, provisioned via YAML files in `grafana/provisioning/`
-- **grafana-ntfy** -- sidecar proxy that translates Grafana webhook alerts into clean ntfy notifications (custom-built arm64 image `homelab-grafana-ntfy:latest`)
+- **Beszel** -- lightweight server monitoring (hub + agent), tracks CPU, memory, disk, network, temperatures, and per-container stats; built-in alerting via ntfy; agent runs with `network_mode: host` and communicates with hub over a shared unix socket (`beszel_socket` volume); accessible at `beszel.home.pawelprotas.com`
 - **Homepage** -- dashboard
 - **OpenCode** -- AI coding agent web UI, mounts `/opt/homelab` as `/workspace`; entrypoint installs `git`, `openssh-client`, `curl`, and the `tea` CLI on every start; configures SSH for Forgejo push access and registers a `tea` login as the `opencode` Forgejo user via API token
 - **Forgejo** -- self-hosted Git forge (`forgejo.home.pawelprotas.com`), SQLite backend, SSH on host port 222; push mirror to GitHub (`pprotas/homelab`) via SSH deploy key, syncs on every push; OpenCode interacts via `tea` CLI (issues, PRs) and Forgejo admin CLI via `docker exec` -- load the `forgejo` skill for usage patterns
@@ -38,8 +35,7 @@
 - `unbound/unbound.conf` -- recursive DNS config
 - `unifi/init-mongo.sh` -- MongoDB init script for UniFi
 - `homepage/` -- dashboard config (services.yaml, settings.yaml, etc.)
-- `grafana/provisioning/` -- Grafana datasources, dashboards, and alerting config (contact points, policies, alert rules)
-- `grafana-ntfy/Dockerfile` -- builds the arm64 grafana-ntfy proxy image
+- `beszel/` -- Beszel hub data (SQLite database, backups)
 - `barber-checker/check.sh` -- barber availability polling script
 - `isponsorblocktv/config.json` -- iSponsorBlockTV device pairing and skip category config
 
@@ -68,12 +64,12 @@ Format: `<type>(<scope>): <description>`
 - `chore` -- maintenance tasks (dependency updates, CI, config changes)
 - `style` -- formatting, whitespace, etc. (no logic change)
 
-**Scope** is optional but encouraged -- use the service or config name (e.g. `caddy`, `grafana`, `dns`, `docker-compose`).
+**Scope** is optional but encouraged -- use the service or config name (e.g. `caddy`, `beszel`, `dns`, `docker-compose`).
 
 **Examples:**
 
 ```
-feat(grafana): add CPU temperature alert rule
+feat(beszel): add CPU temperature alert rule
 fix(caddy): correct upstream for UniFi websocket
 chore: update all container images
 docs: add barber-checker to README
@@ -104,6 +100,6 @@ Unbound has `pawelprotas.com` as a `private-domain` to allow private IP resoluti
 All monitoring alerts go to a single ntfy topic `alerts` at `https://ntfy.home.pawelprotas.com`.
 
 - **Uptime Kuma** -- notifications managed declaratively via AutoKuma Docker labels in `docker-compose.yml`
-- **Grafana** -- alert rules, contact points, and policies provisioned via YAML in `grafana/provisioning/alerting/`. Alerts route through the grafana-ntfy proxy which converts Grafana webhooks into clean ntfy messages
+- **Beszel** -- built-in alerting with native ntfy support, configured via the Beszel web UI
 - **Speedtest Tracker** -- ntfy configured manually via its web UI (no declarative option)
 - **Diun** -- container update notifications sent via native ntfy integration (configured via environment variables in `docker-compose.yml`)

@@ -8,7 +8,7 @@ A single Docker Compose stack running on a Raspberry Pi, serving as a personal p
 graph TD
     CF["Cloudflare DNS<br>*.home.pawelprotas.com → Pi LAN IP"]
     CF --> Caddy["Caddy<br>reverse proxy + TLS"]
-    Caddy --> Services["Forgejo · AdGuard · UniFi<br>Homepage · Uptime Kuma · OpenCode<br>Grafana · Speedtest · Glances"]
+    Caddy --> Services["Forgejo · AdGuard · UniFi<br>Homepage · Uptime Kuma · OpenCode<br>Beszel · Speedtest"]
     Clients["Clients"] --> AdGuard["AdGuard Home :53"] --> Unbound["Unbound :5335"] --> Root["Root DNS"]
 ```
 
@@ -18,13 +18,13 @@ graph TD
 
 **DNS** — Full recursive DNS stack: AdGuard Home for ad blocking, forwarding to Unbound as a recursive resolver that talks directly to root nameservers. No reliance on upstream DNS providers.
 
-**Monitoring & Alerting** — Glances exports system metrics to InfluxDB, visualized in Grafana with provisioned dashboards and alert rules. Uptime Kuma monitors service health. All alerts route to a self-hosted ntfy instance for push notifications.
+**Monitoring & Alerting** — Beszel tracks CPU, memory, disk, network, temperatures, and per-container stats with built-in alerting via ntfy. Uptime Kuma monitors service health. All alerts route to a self-hosted ntfy instance for push notifications.
 
 **Network Management** — UniFi Network Application with MongoDB for managing network infrastructure. Tailscale as a subnet router for secure remote access.
 
 **Self-Hosted Git** — Forgejo as a lightweight Git forge with SSH access, push-mirroring to GitHub via deploy keys.
 
-**Infrastructure as Code** — Everything defined in a single `docker-compose.yml`. Grafana dashboards, datasources, and alerting provisioned via YAML. Secrets centralized in `.env` with variable substitution — nothing hardcoded.
+**Infrastructure as Code** — Everything defined in a single `docker-compose.yml`. Secrets centralized in `.env` with variable substitution — nothing hardcoded.
 
 **Container Maintenance** — Diun watches for image updates and sends notifications. AutoKuma auto-discovers services via Docker labels.
 
@@ -38,8 +38,7 @@ graph TD
 | [UniFi](https://github.com/linuxserver/docker-unifi-network-application) + [MongoDB](https://github.com/mongodb/mongo) | Network controller |
 | [Tailscale](https://github.com/tailscale/tailscale) | VPN / subnet router |
 | [Uptime Kuma](https://github.com/louislam/uptime-kuma) + [AutoKuma](https://github.com/BigBoot/AutoKuma) | Uptime monitoring |
-| [Grafana](https://github.com/grafana/grafana) + [InfluxDB](https://github.com/influxdata/influxdb) | Metrics dashboards & alerting |
-| [Glances](https://github.com/nicolargo/glances) | System monitoring agent |
+| [Beszel](https://github.com/henrygd/beszel) | Server monitoring & alerting |
 | [Speedtest Tracker](https://github.com/alexjustesen/speedtest-tracker) | Scheduled speed tests |
 | [Forgejo](https://codeberg.org/forgejo/forgejo) | Git forge |
 | [Homepage](https://github.com/gethomepage/homepage) | Dashboard |

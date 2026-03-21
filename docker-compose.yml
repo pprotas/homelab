@@ -170,6 +170,8 @@ services:
             - HOMEPAGE_VAR_ADGUARD_USERNAME=${ADGUARD_USERNAME}
             - HOMEPAGE_VAR_ADGUARD_PASSWORD=${ADGUARD_PASSWORD}
             - HOMEPAGE_VAR_SPEEDTEST_API_KEY=${SPEEDTEST_API_KEY}
+            - HOMEPAGE_VAR_BESZEL_USERNAME=${BESZEL_USERNAME}
+            - HOMEPAGE_VAR_BESZEL_PASSWORD=${BESZEL_PASSWORD}
         volumes:
             - ./homepage:/app/config
             - /var/run/docker.sock:/var/run/docker.sock:ro
